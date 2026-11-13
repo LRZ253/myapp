@@ -90,7 +90,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
 }
 
@@ -100,7 +100,7 @@ onBeforeUnmount(() => {
 
 .mini {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   padding: 1px 8px;
 }
 
@@ -112,9 +112,9 @@ onBeforeUnmount(() => {
 
 .card-cell {
   aspect-ratio: 1;
-  border: 0.5px solid var(--border-strong);
-  background: var(--bg-secondary);
-  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
 }
 
 .card-cell.open {
-  background: var(--bg);
+  background: var(--surface);
   border-color: var(--accent);
   color: var(--accent-text);
 }

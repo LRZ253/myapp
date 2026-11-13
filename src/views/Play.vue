@@ -507,13 +507,13 @@ function dayLabel(date: string) {
 <style scoped>
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
   align-items: start;
 }
 
 .block {
-  padding: 12px;
+  padding: 18px;
 }
 
 .block-head {
@@ -524,8 +524,9 @@ function dayLabel(date: string) {
 }
 
 .block-title {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .bars {
@@ -549,7 +550,7 @@ function dayLabel(date: string) {
   width: 100%;
   display: flex;
   align-items: flex-end;
-  background: var(--bg-secondary);
+  background: var(--surface-2);
   border-radius: 3px;
 }
 
@@ -590,11 +591,13 @@ function dayLabel(date: string) {
 
 .kind-select,
 .status-select {
-  border: 0.5px solid var(--border-strong);
-  background: var(--bg);
+  width: auto;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
   border-radius: var(--radius);
   padding: 4px 6px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   outline: none;
 }
 
@@ -610,7 +613,7 @@ function dayLabel(date: string) {
 
 .log-list {
   margin-top: 10px;
-  border-top: 0.5px solid var(--border);
+  border-top: 1px solid var(--border);
 }
 
 .log-row {
@@ -618,8 +621,8 @@ function dayLabel(date: string) {
   align-items: center;
   gap: 8px;
   padding: 4px 0;
-  border-bottom: 0.5px solid var(--border);
-  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
 }
 
 .log-date {
@@ -632,7 +635,7 @@ function dayLabel(date: string) {
   align-items: center;
   gap: 8px;
   padding: 6px 0;
-  border-bottom: 0.5px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .mini-row:last-child {
@@ -640,12 +643,12 @@ function dayLabel(date: string) {
 }
 
 .mini-name {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 500;
 }
 
 .mini {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   padding: 1px 8px;
 }
 
@@ -667,7 +670,7 @@ function dayLabel(date: string) {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--text-2);
   padding: 4px 0;
 }
@@ -678,8 +681,8 @@ function dayLabel(date: string) {
   align-items: center;
   gap: 8px;
   padding: 5px 0;
-  border-bottom: 0.5px solid var(--border);
-  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
 }
 
 .game-main,
@@ -702,12 +705,14 @@ function dayLabel(date: string) {
   display: flex;
   align-items: center;
   gap: 2px;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .progress-input {
   width: 56px;
   padding: 2px 4px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .stars {
@@ -719,7 +724,7 @@ function dayLabel(date: string) {
   border: none;
   background: transparent;
   padding: 0 1px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   color: var(--text-3);
   line-height: 1;
 }
@@ -732,6 +737,8 @@ function dayLabel(date: string) {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .mini-overlay {
@@ -746,9 +753,9 @@ function dayLabel(date: string) {
 }
 
 .mini-panel {
-  background: var(--bg);
+  background: var(--surface);
   border-radius: var(--radius-lg);
-  border: 0.5px solid var(--border);
+  border: 1px solid var(--border);
   padding: 14px;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
 }
@@ -757,7 +764,7 @@ function dayLabel(date: string) {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
   margin-bottom: 8px;
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import Segmented from '@/components/Segmented.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -51,6 +51,11 @@ const timeNote = ref('')
 const newProjectName = ref('')
 const creating = ref(false)
 
+const taskComposer = ref(false)
+const bugComposer = ref(false)
+const taskInput = ref<HTMLInputElement | null>(null)
+const bugInput = ref<HTMLInputElement | null>(null)
+
 let tick: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
@@ -82,6 +87,11 @@ const timers = computed(() => (current.value ? timeLogsOf(db.doc, current.value.
 const timer = computed(() => db.doc.runtime.timer)
 const timerRunning = computed(() => !!timer.value?.running)
 const timerProject = computed(() => db.doc.projects.find((p) => p.id === timer.value?.projectId)?.name || '')
+
+const doneTasks = computed(() => tasks.value.filter((t) => t.status === 'done').length)
+const taskProgress = computed(() =>
+  tasks.value.length ? Math.round((doneTasks.value / tasks.value.length) * 100) : 0,
+)
 
 const elapsedText = computed(() => {
   const ms = elapsedMs(db.doc.runtime.timer, now.value)
@@ -119,24 +129,56 @@ function createNewProject() {
   toast('已创建项目')
 }
 
-function addNewTask() {
-  if (!current.value) return
-  const title = taskDraft.value
-  if (!title.trim()) return
-  patch((doc) => addTask(doc, current.value!.id, title))
+async function openTaskComposer() {
+  taskComposer.value = true
+  await nextTick()
+  taskInput.value?.focus()
+}
+
+function closeTaskComposer() {
+  taskComposer.value = false
   taskDraft.value = ''
 }
 
-function cycleTask(taskId: string, status: TaskStatus) {
-  patch((doc) => setTaskStatus(doc, taskId, nextTaskStatus(status)))
+function addNewTask() {
+  if (!current.value) return
+  const title = taskDraft.value.trim()
+  if (!title) {
+    taskInput.value?.focus()
+    return
+  }
+  patch((doc) => addTask(doc, current.value!.id, title))
+  taskDraft.value = ''
+  taskInput.value?.focus()
+  toast('已添加任务')
+}
+
+async function openBugComposer() {
+  bugComposer.value = true
+  await nextTick()
+  bugInput.value?.focus()
+}
+
+function closeBugComposer() {
+  bugComposer.value = false
+  bugDraft.value = ''
 }
 
 function addNewBug() {
   if (!current.value) return
-  const title = bugDraft.value
-  if (!title.trim()) return
+  const title = bugDraft.value.trim()
+  if (!title) {
+    bugInput.value?.focus()
+    return
+  }
   patch((doc) => addBug(doc, current.value!.id, title))
   bugDraft.value = ''
+  bugInput.value?.focus()
+  toast('已记录 Bug')
+}
+
+function cycleTask(taskId: string, status: TaskStatus) {
+  patch((doc) => setTaskStatus(doc, taskId, nextTaskStatus(status)))
 }
 
 function joinToday(title: string, sourceType: 'task' | 'bug', sourceId: string) {
@@ -206,17 +248,21 @@ function dropProject() {
 <template>
   <section data-testid="page-dev">
     <PageHeader title="开发工作" :subtitle="subtitle">
-      <button class="btn" data-testid="dev-new-project" @click="creating = !creating">+ 新建项目</button>
+      <button class="btn primary" data-testid="dev-new-project" @click="creating = !creating">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13" /></svg>
+        新建项目
+      </button>
     </PageHeader>
 
     <div v-if="creating" class="card create-row">
       <input
         v-model="newProjectName"
-        placeholder="项目名，回车创建"
+        placeholder="给项目起个名字，回车创建"
         data-testid="dev-project-name"
         @keydown.enter="createNewProject"
       />
       <button class="btn primary" @click="createNewProject">创建</button>
+      <button class="btn ghost" @click="creating = false">取消</button>
     </div>
 
     <EmptyState
@@ -229,6 +275,7 @@ function dropProject() {
 
     <div v-else class="dev-layout">
       <aside class="rail">
+        <div class="rail-head">项目 · {{ projects.length }}</div>
         <button
           v-for="project in projects"
           :key="project.id"
@@ -237,8 +284,9 @@ function dropProject() {
           :data-testid="`dev-project-${project.id}`"
           @click="selectedId = project.id"
         >
+          <span class="rail-dot" :data-status="project.status" />
           <span class="rail-name">{{ project.name }}</span>
-          <span class="hint">{{ TASK_STATUS_LABELS[project.status === 'active' ? 'doing' : project.status === 'done' ? 'done' : 'todo'] }}</span>
+          <span class="rail-count">{{ projectSummary(db.doc, project.id).openTasks }}</span>
         </button>
       </aside>
 
@@ -264,16 +312,30 @@ function dropProject() {
           <InlineDelete label="删除项目" @confirm="dropProject" />
         </header>
 
-        <div class="metrics">
-          <div class="metric"><div class="metric-label">累计工时</div><div class="metric-value">{{ formatMinutes(summary.minutes) }}</div></div>
-          <div class="metric"><div class="metric-label">未完成任务</div><div class="metric-value">{{ summary.openTasks }}</div></div>
-          <div class="metric"><div class="metric-label">未解 Bug</div><div class="metric-value">{{ summary.openBugs }}</div></div>
+        <div class="stat-grid metrics">
+          <div class="stat">
+            <div class="stat-label">累计工时</div>
+            <div class="stat-value">{{ formatMinutes(summary.minutes) }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">未完成任务</div>
+            <div class="stat-value">{{ summary.openTasks }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">未解 Bug</div>
+            <div class="stat-value" :class="{ 'text-danger': summary.openBugs > 0 }">{{ summary.openBugs }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">任务完成度</div>
+            <div class="stat-value">{{ taskProgress }}<span class="unit">%</span></div>
+          </div>
         </div>
 
         <div class="tabs">
           <Segmented v-model="tab" :items="tabItems" />
           <div class="spacer" />
           <div v-if="timer" class="timer-chip" :data-testid="'dev-timer-elapsed'">
+            <span class="pulse" :class="{ live: timerRunning }" />
             {{ timerProject }} · {{ elapsedText }}
           </div>
         </div>
@@ -294,7 +356,25 @@ function dropProject() {
               <InlineDelete label="删除" @confirm="patch((doc) => removeTask(doc, task.id))" />
             </div>
           </div>
-          <input v-model="taskDraft" class="add-input" placeholder="加一条任务，回车确认" data-testid="dev-task-add" @keydown.enter="addNewTask" />
+
+          <p v-if="!tasks.length && !taskComposer" class="hint list-empty">这个项目还没有任务。</p>
+
+          <div v-if="taskComposer" class="composer">
+            <input
+              ref="taskInput"
+              v-model="taskDraft"
+              placeholder="任务标题，回车保存；Esc 关闭"
+              data-testid="dev-task-add"
+              @keydown.enter="addNewTask"
+              @keydown.esc="closeTaskComposer"
+            />
+            <button class="btn primary sm" @click="addNewTask">添加</button>
+            <button class="btn ghost sm" @click="closeTaskComposer">取消</button>
+          </div>
+          <button v-else class="add-row" data-testid="dev-task-new" @click="openTaskComposer">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13" /></svg>
+            添加任务
+          </button>
         </div>
 
         <div v-else-if="tab === 'bugs'" class="tab-body">
@@ -307,7 +387,7 @@ function dropProject() {
               <option v-for="(label, key) in SEVERITY_LABELS" :key="key" :value="key">{{ label }}</option>
             </select>
             <span class="line-title" :class="{ done: bug.status === 'fixed' }">{{ bug.title }}</span>
-            <span class="tag" :class="{ accent: bug.status === 'fixed' }">{{ bug.status === 'fixed' ? '已解' : '未解' }}</span>
+            <span class="tag" :class="bug.status === 'fixed' ? 'ok' : 'danger'">{{ bug.status === 'fixed' ? '已解' : '未解' }}</span>
             <div class="row-actions">
               <button
                 class="btn ghost mini"
@@ -320,7 +400,25 @@ function dropProject() {
               <InlineDelete label="删除" @confirm="patch((doc) => removeBug(doc, bug.id))" />
             </div>
           </div>
-          <input v-model="bugDraft" class="add-input" placeholder="记一个 Bug，回车确认" data-testid="dev-bug-add" @keydown.enter="addNewBug" />
+
+          <p v-if="!bugs.length && !bugComposer" class="hint list-empty">还没有 Bug 记录。</p>
+
+          <div v-if="bugComposer" class="composer">
+            <input
+              ref="bugInput"
+              v-model="bugDraft"
+              placeholder="Bug 描述，回车保存；Esc 关闭"
+              data-testid="dev-bug-add"
+              @keydown.enter="addNewBug"
+              @keydown.esc="closeBugComposer"
+            />
+            <button class="btn primary sm" @click="addNewBug">添加</button>
+            <button class="btn ghost sm" @click="closeBugComposer">取消</button>
+          </div>
+          <button v-else class="add-row" data-testid="dev-bug-new" @click="openBugComposer">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13" /></svg>
+            记录 Bug
+          </button>
         </div>
 
         <div v-else-if="tab === 'time'" class="tab-body">
@@ -329,7 +427,7 @@ function dropProject() {
               {{ !timer ? '开始计时' : timerRunning ? '暂停' : '继续' }}
             </button>
             <button v-if="timer" class="btn" data-testid="dev-timer-stop" @click="finishTimer">结束并记录</button>
-            <span class="hint" data-testid="dev-timer-text">{{ elapsedText }}</span>
+            <span class="timer-digits" data-testid="dev-timer-text">{{ elapsedText }}</span>
           </div>
 
           <div class="manual">
@@ -339,17 +437,17 @@ function dropProject() {
           </div>
 
           <div v-for="log in timers" :key="log.id" class="line">
-            <span class="hint">{{ log.startedAt.slice(5, 10) }}</span>
+            <span class="hint log-date">{{ log.startedAt.slice(5, 10) }}</span>
             <span class="line-title">{{ log.note || '未填说明' }}</span>
             <span class="tag">{{ formatMinutes(log.minutes) }}</span>
           </div>
-          <p v-if="!timers.length" class="hint">还没有工时记录。</p>
+          <p v-if="!timers.length" class="hint list-empty">还没有工时记录，上面可以直接开计时。</p>
         </div>
 
         <div v-else class="tab-body">
           <textarea v-model="logDraft" rows="3" placeholder="今天推进了什么、卡在哪" data-testid="dev-log-input" />
-          <div class="row" style="margin-top: 6px">
-            <button class="btn" data-testid="dev-log-save" @click="saveLog">记一笔</button>
+          <div class="row" style="margin-top: 8px">
+            <button class="btn primary sm" data-testid="dev-log-save" @click="saveLog">记一笔</button>
           </div>
           <div v-for="log in logs" :key="log.id" class="log-item">
             <div class="hint">{{ log.date }}</div>
@@ -365,14 +463,14 @@ function dropProject() {
 .create-row {
   display: flex;
   gap: 8px;
-  padding: 10px;
-  margin-bottom: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
 }
 
 .dev-layout {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 208px minmax(0, 1fr);
+  gap: 16px;
   align-items: start;
 }
 
@@ -380,106 +478,172 @@ function dropProject() {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.rail-head {
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 4px 8px 8px;
 }
 
 .rail-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   border: 0;
   background: transparent;
-  padding: 6px 8px;
-  border-radius: 6px;
-  font-size: 12px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
   text-align: left;
+  color: var(--text-2);
+  transition: background 0.14s ease, color 0.14s ease;
 }
 
 .rail-item:hover {
-  background: var(--bg-secondary);
+  background: var(--surface-hover);
+  color: var(--text);
 }
 
 .rail-item.active {
-  background: var(--bg-secondary);
-  font-weight: 500;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.rail-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: 0 0 6px;
+  background: var(--text-3);
+}
+
+.rail-dot[data-status="active"] {
+  background: var(--ok);
+}
+
+.rail-dot[data-status="paused"] {
+  background: var(--warn);
 }
 
 .rail-name {
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.rail-count {
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+}
+
+.rail-item.active .rail-count {
+  color: var(--accent-text);
+}
+
 .detail {
-  padding: 14px;
+  padding: 18px;
 }
 
 .detail-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .project-name {
-  border: 0;
+  border: 1px solid transparent;
   background: transparent;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 2px 0;
-  width: 240px;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  padding: 2px 6px;
+  margin-left: -6px;
+  width: 260px;
+  box-shadow: none;
+}
+
+.project-name:hover {
+  border-color: var(--border);
+  background: var(--surface);
 }
 
 .project-name:focus {
-  border-bottom: 0.5px solid var(--accent);
+  border-color: var(--accent);
+  background: var(--surface);
 }
 
 .status-select {
-  border: 0.5px solid var(--border-strong);
-  border-radius: var(--radius);
-  background: var(--bg);
-  font-size: 11px;
-  padding: 2px 4px;
+  width: auto;
+  height: 26px;
+  font-size: var(--fs-xs);
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
 }
 
 .metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
-.metric {
-  background: var(--bg-secondary);
-  border-radius: var(--radius);
-  padding: 8px 10px;
-}
-
-.metric-label {
-  font-size: 11px;
-  color: var(--text-3);
-}
-
-.metric-value {
-  font-size: 14px;
+.stat-value .unit {
+  font-size: var(--fs-sm);
   font-weight: 500;
+  color: var(--text-3);
+  margin-left: 1px;
+}
+
+.text-danger {
+  color: var(--danger);
 }
 
 .tabs {
   display: flex;
   align-items: center;
-  gap: 8px;
-  border-bottom: 0.5px solid var(--border);
-  padding-bottom: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 .timer-chip {
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
   color: var(--accent-text);
   background: var(--accent-soft);
-  border-radius: 4px;
-  padding: 1px 6px;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+
+.pulse.live {
+  background: var(--ok);
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 
 .tab-body {
@@ -491,17 +655,20 @@ function dropProject() {
 .line {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-  font-size: 12px;
-  border-radius: 6px;
+  gap: 10px;
+  padding: 7px 8px;
+  font-size: var(--fs-sm);
+  border-radius: var(--radius-sm);
+  transition: background 0.12s ease;
 }
 
 .line:hover {
-  background: var(--bg-tertiary);
+  background: var(--surface-2);
 }
 
 .line-title {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -514,12 +681,16 @@ function dropProject() {
 
 .status-btn,
 .sev-select {
-  font-size: 11px;
-  border: 0.5px solid var(--border);
-  background: var(--bg);
-  border-radius: 4px;
-  padding: 1px 6px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 1px 9px;
   flex: 0 0 auto;
+  width: auto;
+  height: 22px;
+  line-height: 20px;
 }
 
 .status-btn[data-status='doing'] {
@@ -530,6 +701,7 @@ function dropProject() {
 
 .status-btn[data-status='done'] {
   color: var(--text-3);
+  background: var(--surface-2);
 }
 
 .row-actions {
@@ -537,54 +709,98 @@ function dropProject() {
   display: flex;
   align-items: center;
   gap: 2px;
-  opacity: 0;
+  opacity: 0.55;
+  transition: opacity 0.14s ease;
 }
 
-.line:hover .row-actions {
+.line:hover .row-actions,
+.row-actions:focus-within {
   opacity: 1;
 }
 
 .mini {
-  font-size: 11px;
-  padding: 1px 6px;
+  font-size: var(--fs-xs);
+  padding: 0 7px;
+  height: 24px;
 }
 
-.add-input {
-  border: 0;
+.list-empty {
+  padding: 14px 8px;
+}
+
+.add-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
   background: transparent;
-  padding: 4px 0;
-  font-size: 12px;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+  transition: color 0.14s ease, border-color 0.14s ease, background 0.14s ease;
 }
 
-.add-input::placeholder {
-  color: var(--text-3);
+.add-row:hover {
+  color: var(--accent-text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.composer {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.composer input {
+  flex: 1;
 }
 
 .timer-box {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.timer-digits {
+  font-family: var(--font-num);
+  font-size: var(--fs-lg);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--text-2);
 }
 
 .manual {
   display: flex;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .minutes-input {
-  width: 80px;
+  width: 88px;
+}
+
+.log-date {
+  font-variant-numeric: tabular-nums;
 }
 
 .log-item {
-  border-top: 0.5px solid var(--border);
-  padding: 8px 0 4px;
+  border-top: 1px solid var(--border);
+  padding: 10px 2px 6px;
 }
 
 .log-content {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   white-space: pre-wrap;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 </style>

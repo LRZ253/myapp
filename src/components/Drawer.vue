@@ -57,8 +57,8 @@ onBeforeUnmount(() => {
 .drawer {
   width: var(--drawer-w);
   height: 100%;
-  background: var(--bg);
-  border-left: 0.5px solid var(--border);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   outline: none;
@@ -70,11 +70,11 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 8px;
   padding: 14px 16px;
-  border-bottom: 0.5px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .drawer-title {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
 }
 

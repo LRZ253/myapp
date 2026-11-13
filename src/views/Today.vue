@@ -20,11 +20,13 @@ const date = computed(() => (typeof route.query.date === 'string' && route.query
 const stats = computed(() => isDoneToday(db.doc, date.value))
 const candidates = computed(() => rolloverCandidates(db.doc, today))
 const showRollover = computed(() => date.value === today && candidates.value.length > 0 && !dismissed.value)
+
 const subtitle = computed(() => {
-  const base = `${formatDate(date.value)} ${weekdayName(date.value)}`
-  if (!stats.value.total) return base
-  return `${base} · 完成 ${stats.value.done} / ${stats.value.total}`
+  if (!stats.value.total) return '把要做的事排进来'
+  return `完成 ${stats.value.done} / ${stats.value.total}`
 })
+
+const dateLabel = computed(() => `${formatDate(date.value)} ${weekdayName(date.value)}`)
 
 function go(target: string) {
   if (target === today) router.push({ path: '/today' })
@@ -62,19 +64,29 @@ function seed() {
 <template>
   <section data-testid="page-today">
     <PageHeader title="今日计划" :subtitle="subtitle">
-      <button class="btn ghost" data-testid="date-prev" @click="go(addDays(date, -1))">‹</button>
-      <button v-if="date !== today" class="btn" data-testid="date-today" @click="go(today)">回到今天</button>
-      <button class="btn ghost" data-testid="date-next" @click="go(addDays(date, 1))">›</button>
+      <div class="date-nav">
+        <button class="icon-btn" aria-label="前一天" data-testid="date-prev" @click="go(addDays(date, -1))">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6-6 6 6 6" /></svg>
+        </button>
+        <span class="date-text">{{ dateLabel }}</span>
+        <button class="icon-btn" aria-label="后一天" data-testid="date-next" @click="go(addDays(date, 1))">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6 6 6-6 6" /></svg>
+        </button>
+      </div>
+      <button v-if="date !== today" class="btn sm" data-testid="date-today" @click="go(today)">回到今天</button>
     </PageHeader>
 
     <div v-if="showRollover" class="rollover" data-testid="rollover-bar">
       <div class="row">
-        <span>昨天还有 {{ candidates.length }} 件没做完</span>
+        <span class="rollover-icon">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4.5l3 1.8" /><circle cx="12" cy="12" r="8.4" /></svg>
+        </span>
+        <span class="rollover-text">昨天还有 <b>{{ candidates.length }}</b> 件没做完</span>
         <div class="spacer" />
         <button class="btn mini" data-testid="rollover-expand" @click="expanded = !expanded">
           {{ expanded ? '收起' : '逐条选择' }}
         </button>
-        <button class="btn mini" data-testid="rollover-all" @click="moveAll">全部移到今天</button>
+        <button class="btn primary mini" data-testid="rollover-all" @click="moveAll">全部移到今天</button>
         <button class="btn ghost mini" data-testid="rollover-ignore" @click="dismissed = true">忽略</button>
       </div>
 
@@ -87,7 +99,7 @@ function seed() {
             :data-testid="`rollover-pick-${item.id}`"
             @change="togglePicked(item.id)"
           />
-          <span>{{ item.title }}</span>
+          <span class="ellipsis">{{ item.title }}</span>
           <span class="hint">{{ item.date.slice(5) }}</span>
         </label>
         <button class="btn mini" data-testid="rollover-move-picked" @click="movePicked">移入选中的</button>
@@ -96,7 +108,7 @@ function seed() {
 
     <EmptyState
       v-if="stats.total === 0"
-      title="今天还没有安排"
+      title="这天还没有安排"
       desc="把要做的事加进来，或在各模块里点「加入今天」。"
       action-label="填入示例"
       data-testid="today-empty"
@@ -108,19 +120,47 @@ function seed() {
 </template>
 
 <style scoped>
+.date-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-xs);
+}
+
+.date-text {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  padding: 0 8px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .rollover {
-  border: 0.5px solid var(--border);
+  border: 1px solid var(--warn);
   border-radius: var(--radius-lg);
-  padding: 8px 12px;
-  margin-bottom: 14px;
-  background: var(--bg-secondary);
-  font-size: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: var(--warn-soft);
+  font-size: var(--fs-sm);
+}
+
+.rollover-icon {
+  color: var(--warn-text);
+  display: inline-flex;
+}
+
+.rollover-text b {
+  color: var(--warn-text);
 }
 
 .rollover-list {
-  margin-top: 8px;
-  border-top: 0.5px solid var(--border);
-  padding-top: 6px;
+  margin-top: 10px;
+  border-top: 1px solid rgba(217, 134, 24, 0.25);
+  padding-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -129,8 +169,8 @@ function seed() {
 .rollover-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 8px;
+  font-size: var(--fs-sm);
 }
 
 .rollover-item input {
@@ -142,7 +182,8 @@ function seed() {
 }
 
 .mini {
-  font-size: 11px;
-  padding: 1px 7px;
+  height: 24px;
+  font-size: var(--fs-xs);
+  padding: 0 8px;
 }
 </style>

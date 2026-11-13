@@ -184,7 +184,7 @@ function remove() {
 }
 
 .field-label {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 
@@ -195,11 +195,11 @@ function remove() {
 }
 
 .chip {
-  border: 0.5px solid var(--border-strong);
-  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
   border-radius: 20px;
   padding: 1px 9px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-2);
 }
 
@@ -210,7 +210,7 @@ function remove() {
 }
 
 .small-input {
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 
 .time-input {
@@ -227,7 +227,7 @@ function remove() {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
 }
 </style>

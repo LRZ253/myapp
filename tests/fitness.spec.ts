@@ -191,11 +191,60 @@ describe('健身页面', () => {
     return wrapper
   }
 
-  it('一周七天都能看到', async () => {
+  it('月历渲染整月，今天格子带标记', async () => {
     const w = await mountFitness(createEmptyDoc())
-    for (let i = 1; i <= 7; i++) {
-      expect(w.find(`[data-testid="fitness-day-${i}"]`).exists()).toBe(true)
-    }
+    expect(w.find('[data-testid="month-grid"]').exists()).toBe(true)
+    expect(w.findAll('.mc-cell').length).toBe(42)
+    expect(w.find(`[data-testid="fitness-cell-${TODAY}"]`).exists()).toBe(true)
+  })
+
+  it('格子里显示部位、动作数与组数', async () => {
+    const doc = createEmptyDoc()
+    ensureWeekPlan(doc)
+    const bench = addExercise(doc, '卧推', '胸')!
+    const fly = addExercise(doc, '飞鸟', '胸')!
+    setDayPlan(doc, TODAY_WEEKDAY, { type: 'train', focus: '胸 + 三头' })
+    toggleDayExercise(doc, TODAY_WEEKDAY, bench.id)
+    toggleDayExercise(doc, TODAY_WEEKDAY, fly.id)
+    ensureWorkout(doc, TODAY)
+
+    const w = await mountFitness(doc)
+    const cell = w.find(`[data-testid="fitness-cell-${TODAY}"]`)
+    expect(cell.text()).toContain('胸 + 三头')
+    expect(cell.text()).toContain('2 动作')
+    expect(cell.text()).toContain('6 组')
+  })
+
+  it('实际练的部位与周模板不同时，会说明差异', async () => {
+    const doc = createEmptyDoc()
+    ensureWeekPlan(doc)
+    const exercise = addExercise(doc, '深蹲', '腿')!
+    setDayPlan(doc, TODAY_WEEKDAY, { type: 'train', focus: '腿' })
+    toggleDayExercise(doc, TODAY_WEEKDAY, exercise.id)
+    const workout = ensureWorkout(doc, TODAY)!
+    workout.focus = '胸 + 三头'
+
+    const w = await mountFitness(doc)
+    // 日历格子按实际记录显示
+    expect(w.find(`[data-testid="fitness-cell-${TODAY}"]`).text()).toContain('胸 + 三头')
+    // 详情区提示模板与实际记录的差别，避免"格子里写胸、详情里写腿"
+    const diff = w.find('[data-testid="fitness-focus-diff"]')
+    expect(diff.exists()).toBe(true)
+    expect(diff.text()).toContain('胸 + 三头')
+    expect(diff.text()).toContain('模板')
+
+    // 模板改到与实际一致后提示消失
+    setDayPlan(db.doc, TODAY_WEEKDAY, { focus: '胸 + 三头' })
+    await flushPromises()
+    expect(w.find('[data-testid="fitness-focus-diff"]').exists()).toBe(false)
+  })
+
+  it('点日历里的其他日期，详情区会切过去', async () => {
+    const w = await mountFitness(createEmptyDoc())
+    const target = addDays(TODAY, 1)
+    await w.find(`[data-testid="fitness-cell-${target}"]`).trigger('click')
+    await flushPromises()
+    expect(w.find('[data-testid="fitness-cell-' + target + '"]').classes()).toContain('selected')
   })
 
   it('今天安排训练但未开始时，可以点开始生成训练', async () => {

@@ -55,11 +55,23 @@ export function setStage(doc: DeskDoc, id: string, stage: MediaStage): void {
 export function setStats(doc: DeskDoc, id: string, stats: Partial<Omit<MediaStats, 'recordedAt'>>): void {
   const content = findContent(doc, id)
   if (!content) return
-  content.stats = {
+  const next = {
     views: stats.views ?? content.stats.views,
     likes: stats.likes ?? content.stats.likes,
     follows: stats.follows ?? content.stats.follows,
+  }
+  const history = content.stats.history ? content.stats.history.slice() : []
+  const day = toKey(new Date())
+  const existing = history.findIndex((p) => p.date === day)
+  const point = { date: day, ...next }
+  if (existing >= 0) history[existing] = point
+  else history.push(point)
+  history.sort((a, b) => (a.date < b.date ? -1 : 1))
+
+  content.stats = {
+    ...next,
     recordedAt: nowIso(),
+    history,
   }
   content.updatedAt = nowIso()
 }

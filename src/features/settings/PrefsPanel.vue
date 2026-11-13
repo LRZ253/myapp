@@ -107,7 +107,7 @@ function onRate(event: Event) {
 }
 
 .block-title {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
 }
 
@@ -116,8 +116,8 @@ function onRate(event: Event) {
   align-items: center;
   gap: 10px;
   padding: 5px 0;
-  border-bottom: 0.5px solid var(--border);
-  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
 }
 
 .field-label {
@@ -127,11 +127,11 @@ function onRate(event: Event) {
 }
 
 .field select {
-  border: 0.5px solid var(--border-strong);
-  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
   border-radius: var(--radius);
   padding: 4px 6px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   outline: none;
   width: 120px;
 }

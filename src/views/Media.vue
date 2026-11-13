@@ -5,6 +5,7 @@ import Segmented from '@/components/Segmented.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import InlineDelete from '@/components/InlineDelete.vue'
 import ContentDrawer from '@/features/media/ContentDrawer.vue'
+import MediaAnalytics from '@/features/media/MediaAnalytics.vue'
 import { db, patch } from '@/store/db'
 import { openDrawer, toast } from '@/store/ui'
 import { formatDate, formatMonth, monthGrid, toKey } from '@/lib/date'
@@ -21,7 +22,8 @@ import {
   setStage,
 } from '@/features/media/mediaLogic'
 
-const view = ref('kanban')
+const initialView = new URLSearchParams(window.location.search).get('view') || ''
+const view = ref(['kanban', 'calendar', 'list', 'analytics'].includes(initialView) ? initialView : 'kanban')
 const newTitle = ref('')
 const dragging = ref<string | null>(null)
 const today = toKey(new Date())
@@ -31,6 +33,7 @@ const viewItems = [
   { value: 'kanban', label: '看板' },
   { value: 'calendar', label: '日历' },
   { value: 'list', label: '列表' },
+  { value: 'analytics', label: '数据' },
 ]
 
 const columns = computed(() => MEDIA_STAGES.map((stage) => ({ ...stage, items: contentsByStage(db.doc, stage.key) })))
@@ -93,7 +96,7 @@ function isCurrentMonth(key: string) {
     </div>
 
     <EmptyState
-      v-if="!total"
+      v-if="!total && view !== 'analytics'"
       title="还没有内容"
       desc="先把想到的选题写进「选题」列，后面一路拖到已发布。"
       action-label="填入示例选题"
@@ -165,6 +168,8 @@ function isCurrentMonth(key: string) {
       </div>
     </div>
 
+    <MediaAnalytics v-else-if="view === 'analytics'" />
+
     <div v-else class="list" data-testid="media-list">
       <div class="list-head">
         <span>标题</span>
@@ -190,61 +195,78 @@ function isCurrentMonth(key: string) {
 
 <style scoped>
 .new-input {
-  width: 180px;
-  font-size: 11px;
-  padding: 3px 8px;
+  width: 200px;
+  height: var(--control-h);
+  font-size: var(--fs-sm);
 }
 
 .review-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding: 6px 10px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius);
-  margin-bottom: 12px;
-  font-size: 11px;
+  gap: 14px;
+  padding: 9px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  margin-bottom: 14px;
+  font-size: var(--fs-xs);
+}
+
+.review-item {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
 }
 
 .kanban {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: 12px;
   align-items: start;
 }
 
 .column {
   background: var(--bg-secondary);
-  border-radius: 7px;
-  padding: 7px;
-  min-height: 120px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  min-height: 160px;
 }
 
 .column-head {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--text-2);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  padding: 0 2px;
 }
 
 .content-card {
-  background: var(--bg);
-  border: 0.5px solid var(--border);
-  border-radius: 6px;
-  padding: 7px;
-  margin-bottom: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  margin-bottom: 7px;
   cursor: grab;
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow 0.16s ease, transform 0.16s ease, border-color 0.16s ease;
 }
 
 .content-card:hover {
-  border-color: var(--border-strong);
+  border-color: var(--accent-line);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .card-title {
-  font-size: 11.5px;
-  line-height: 1.4;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -254,69 +276,79 @@ function isCurrentMonth(key: string) {
 .card-meta {
   display: flex;
   justify-content: space-between;
-  gap: 4px;
-  margin-top: 4px;
-  font-size: 11px;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: var(--fs-xs);
 }
 
 .calendar {
-  border: 0.5px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
 }
 
 .cal-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
-  margin-bottom: 8px;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  margin-bottom: 12px;
 }
 
 .cal-week,
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .cal-week span {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--text-3);
-  padding: 2px 4px;
+  padding: 2px 6px;
 }
 
 .cal-cell {
-  min-height: 74px;
-  border-top: 0.5px solid var(--border);
-  border-left: 0.5px solid var(--border);
-  padding: 3px 4px;
+  min-height: 92px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  background: var(--surface);
+  transition: border-color 0.14s ease, background 0.14s ease;
 }
 
-.cal-cell:nth-child(7n) {
-  border-right: 0.5px solid var(--border);
+.cal-cell:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
 }
 
 .cal-cell.dim {
-  opacity: 0.45;
+  opacity: 0.42;
 }
 
 .cal-cell.today {
+  border-color: var(--accent);
   background: var(--accent-soft);
 }
 
 .cal-day {
-  font-size: 11px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
   color: var(--text-2);
+  font-variant-numeric: tabular-nums;
 }
 
 .cal-item {
   border: 0;
   background: transparent;
   text-align: left;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   padding: 1px 0;
   color: var(--accent-text);
   overflow: hidden;
@@ -324,30 +356,38 @@ function isCurrentMonth(key: string) {
   white-space: nowrap;
 }
 
+.cal-item:hover {
+  text-decoration: underline;
+}
+
 .list {
-  border: 0.5px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 4px 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  padding: 4px 16px 8px;
 }
 
 .list-head,
 .list-row {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 88px 92px 64px 56px;
-  gap: 8px;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 96px 100px 72px 68px;
+  gap: 10px;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 
 .list-head {
   color: var(--text-3);
-  padding: 6px 0;
-  border-bottom: 0.5px solid var(--border);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .list-row {
-  padding: 5px 0;
-  border-bottom: 0.5px solid var(--border);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .list-row:last-child {
@@ -358,7 +398,7 @@ function isCurrentMonth(key: string) {
   border: 0;
   background: transparent;
   text-align: left;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -370,10 +410,11 @@ function isCurrentMonth(key: string) {
 }
 
 .stage-select {
-  font-size: 11px;
-  border: 0.5px solid var(--border);
-  background: var(--bg);
-  border-radius: 4px;
+  font-size: var(--fs-xs);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-xs);
   padding: 1px 4px;
+  height: 24px;
 }
 </style>

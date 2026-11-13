@@ -240,7 +240,33 @@ describe('开发工作页面', () => {
     const w = await mountDev(doc)
     expect(w.text()).toContain('工作台')
     expect(w.text()).toContain('改完登录接口')
+
+    // 新增加入口：先看到按钮，点开才出现输入框
+    expect(w.find('[data-testid="dev-task-add"]').exists()).toBe(false)
+    const newBtn = w.find('[data-testid="dev-task-new"]')
+    expect(newBtn.exists()).toBe(true)
+    await newBtn.trigger('click')
     expect(w.find('[data-testid="dev-task-add"]').exists()).toBe(true)
+  })
+
+  it('通过按钮新增任务，回车后留在输入状态可连续添加', async () => {
+    const doc = seedDoc()
+    const w = await mountDev(doc)
+
+    await w.find('[data-testid="dev-task-new"]').trigger('click')
+    const input = w.find('[data-testid="dev-task-add"]')
+    await input.setValue('补一版埋点')
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(db.doc.tasks.some((t) => t.title === '补一版埋点')).toBe(true)
+    expect(w.find('[data-testid="dev-task-add"]').exists()).toBe(true)
+    expect((w.find('[data-testid="dev-task-add"]').element as HTMLInputElement).value).toBe('')
+
+    await w.find('[data-testid="dev-task-add"]').setValue('再补一条')
+    await w.find('[data-testid="dev-task-add"]').trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+    expect(db.doc.tasks.filter((t) => t.title.startsWith('补') || t.title === '再补一条').length).toBeGreaterThan(1)
   })
 
   it('点加入今天会写入今日计划，并带上来源', async () => {

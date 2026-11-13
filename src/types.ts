@@ -46,11 +46,21 @@ export interface Memo {
 
 export type MediaStage = 'idea' | 'draft' | 'ready' | 'published'
 
+export interface MediaStatPoint {
+  /** 记录日期 YYYY-MM-DD */
+  date: string
+  views: number
+  likes: number
+  follows: number
+}
+
 export interface MediaStats {
   views: number
   likes: number
   follows: number
   recordedAt: string | null
+  /** 每次记录追加一个点，用于画趋势；同一天覆盖 */
+  history?: MediaStatPoint[]
 }
 
 export interface MediaContent {

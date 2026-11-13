@@ -157,19 +157,39 @@ describe('饮食页面', () => {
     return wrapper
   }
 
-  it('周表格渲染七天四餐', async () => {
+  it('月历渲染整月，今天在格子里', async () => {
     const w = await mountDiet(createEmptyDoc())
-    expect(w.find('[data-testid="diet-week"]').exists()).toBe(true)
-    expect(w.findAll('.wg-cell')).toHaveLength(28)
+    expect(w.find('[data-testid="month-grid"]').exists()).toBe(true)
+    expect(w.findAll('.mc-cell')).toHaveLength(42)
+    expect(w.find(`[data-testid="diet-cell-${TODAY}"]`).exists()).toBe(true)
   })
 
-  it('点格子打开选菜抽屉', async () => {
+  it('点某天格子打开当天饮食抽屉', async () => {
     const w = await mountDiet(createEmptyDoc())
-    await w.find(`[data-testid="diet-cell-${TODAY}-lunch"]`).trigger('click')
+    await w.find(`[data-testid="diet-cell-${TODAY}"]`).trigger('click')
     await flushPromises()
 
-    expect(ui.drawer?.title).toContain('午餐')
-    expect((ui.drawer?.props as { mealType?: string })?.mealType).toBe('lunch')
+    expect(ui.drawer?.title).toContain('饮食')
+    expect((ui.drawer?.props as { date?: string })?.date).toBe(TODAY)
+  })
+
+  it('格子会显示当天排的菜', async () => {
+    const doc = createEmptyDoc()
+    const dish = addDish(doc, '鸡胸沙拉', 'lunch', 500)!
+    setMealPlan(doc, TODAY, 'lunch', [dish.id])
+
+    const w = await mountDiet(doc)
+    const cell = w.find(`[data-testid="diet-cell-${TODAY}"]`)
+    expect(cell.text()).toContain('鸡胸沙拉')
+    expect(cell.text()).toContain('500')
+  })
+
+  it('空格子用 is-empty 标记，不会套上全局空状态盒子的样式', async () => {
+    const w = await mountDiet(createEmptyDoc())
+    const cell = w.find(`[data-testid="diet-cell-${TODAY}"]`)
+    // .empty 是全局空状态组件（大虚线框）的类名，格子里的空提示必须用 .is-empty
+    expect(cell.findAll('.empty')).toHaveLength(0)
+    expect(cell.find('.is-empty').exists()).toBe(true)
   })
 
   it('点水滴会累加喝水杯数', async () => {

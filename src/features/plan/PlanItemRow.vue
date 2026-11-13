@@ -150,29 +150,39 @@ function estimateText(min: number | null) {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 3px 0;
-  font-size: 12px;
-  border-radius: 6px;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: var(--fs-sm);
+  border-radius: var(--radius-sm);
+  transition: background 0.12s ease;
 }
 
 .plan-row:hover {
-  background: var(--bg-tertiary);
+  background: var(--surface-hover);
 }
 
 .check {
-  width: 12px;
-  height: 12px;
-  flex: 0 0 auto;
-  border-radius: 3px;
-  border: 0.5px solid var(--border-strong);
-  background: transparent;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border-strong);
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 11px;
   padding: 0;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.check:hover {
+  border-color: var(--accent);
 }
 
 .check[aria-checked='true'] {
-  background: var(--text-2);
-  border-color: var(--text-2);
+  background-color: var(--ok);
+  border-color: var(--ok);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E");
 }
 
 .plan-title {
@@ -181,6 +191,7 @@ function estimateText(min: number | null) {
   white-space: nowrap;
   cursor: text;
   min-width: 0;
+  flex: 1;
 }
 
 .plan-title.missing {
@@ -195,8 +206,8 @@ function estimateText(min: number | null) {
 }
 
 .title-input {
-  padding: 1px 4px;
-  font-size: 12px;
+  padding: 2px 6px;
+  font-size: var(--fs-sm);
 }
 
 .estimate {
@@ -204,9 +215,9 @@ function estimateText(min: number | null) {
 }
 
 .prio {
-  width: 12px;
-  height: 12px;
-  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
   border: 0;
   background: transparent;
   border-radius: 50%;
@@ -217,13 +228,14 @@ function estimateText(min: number | null) {
 .prio::after {
   content: '';
   position: absolute;
-  inset: 3px;
+  inset: 4px;
   border-radius: 50%;
   background: var(--border-strong);
+  transition: background 0.14s ease;
 }
 
 .prio[data-priority='1']::after {
-  background: #ef9f27;
+  background: var(--warn);
 }
 
 .prio[data-priority='2']::after {
@@ -235,35 +247,39 @@ function estimateText(min: number | null) {
   display: flex;
   align-items: center;
   gap: 2px;
-  opacity: 0;
+  opacity: 0.45;
+  transition: opacity 0.14s ease;
 }
 
-.plan-row:hover .row-actions {
+.plan-row:hover .row-actions,
+.row-actions:focus-within {
   opacity: 1;
 }
 
 .mini {
-  font-size: 11px;
-  padding: 1px 6px;
+  height: 24px;
+  font-size: var(--fs-xs);
+  padding: 0 7px;
 }
 
 .move-pop {
   position: absolute;
   right: 0;
-  top: 100%;
-  z-index: 20;
+  top: calc(100% + 4px);
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px;
-  background: var(--bg);
-  border: 0.5px solid var(--border-strong);
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
 }
 
 .date-input {
   width: 130px;
-  font-size: 11px;
-  padding: 2px 4px;
+  font-size: var(--fs-xs);
+  padding: 3px 6px;
 }
 </style>

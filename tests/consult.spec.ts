@@ -229,6 +229,35 @@ describe('咨询页面', () => {
     expect(db.doc.followups[0].title).toBe('给清单')
   })
 
+  it('客户可以删除：两次点击确认，连带清掉项目、会谈与跟进', async () => {
+    const doc = seed()
+    const client = doc.clients[0]
+    const session = addSession(doc, { clientId: client.id, topic: '初次沟通', conclusion: '出方案' })!
+    generateFollowUp(doc, session.id)
+    expect(doc.engagements.length).toBe(1)
+    expect(doc.followups.length).toBe(1)
+
+    const w = await mountConsult(doc)
+    const row = w.find(`[data-testid="client-${client.id}"]`)
+    const del = row.find('[data-testid="inline-delete"]')
+
+    expect(del.exists()).toBe(true)
+    expect(del.attributes('data-pending')).toBe('false')
+
+    // 第一次点击只进入待确认，不删数据
+    await del.trigger('click')
+    expect(del.attributes('data-pending')).toBe('true')
+    expect(db.doc.clients).toHaveLength(1)
+
+    // 第二次点击才真正删除
+    await del.trigger('click')
+    await flushPromises()
+    expect(db.doc.clients).toHaveLength(0)
+    expect(db.doc.engagements).toHaveLength(0)
+    expect(db.doc.sessions).toHaveLength(0)
+    expect(db.doc.followups).toHaveLength(0)
+  })
+
   it('逾期跟进有醒目标记', async () => {
     const doc = seed()
     const clientId = doc.clients[0].id

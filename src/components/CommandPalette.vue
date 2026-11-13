@@ -157,8 +157,8 @@ onMounted(() => input.value?.focus())
 .palette {
   width: 420px;
   max-height: 380px;
-  background: var(--bg);
-  border: 0.5px solid var(--border-strong);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
@@ -167,10 +167,10 @@ onMounted(() => input.value?.focus())
 
 .palette-input {
   border: 0;
-  border-bottom: 0.5px solid var(--border);
+  border-bottom: 1px solid var(--border);
   border-radius: 0;
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: var(--fs-base);
 }
 
 .palette-input:focus {
@@ -191,7 +191,7 @@ onMounted(() => input.value?.focus())
   border: 0;
   background: transparent;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 12.5px;
   text-align: left;
 }
@@ -201,7 +201,7 @@ onMounted(() => input.value?.focus())
 }
 
 .palette-item.active {
-  background: var(--bg-secondary);
+  background: var(--surface-2);
 }
 
 .palette-empty {

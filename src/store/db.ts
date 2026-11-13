@@ -14,10 +14,14 @@ export const db = reactive({
   ready: false,
   saving: false,
   savedAt: null as string | null,
+  /** 有改动还没落盘 */
+  dirty: false,
   error: null as DbError | null,
 })
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+/** 每次 patch 自增；保存完成时若没有新改动才把 dirty 清掉 */
+let rev = 0
 
 export function setDoc(next: DeskDoc): void {
   db.doc = next
@@ -41,6 +45,7 @@ export async function loadDoc(): Promise<boolean> {
     db.savedAt = body.savedAt || null
     db.error = null
     db.ready = true
+    db.dirty = false
     return true
   } catch (err) {
     db.error = {
@@ -56,6 +61,8 @@ export async function loadDoc(): Promise<boolean> {
 /** 所有写入的唯一入口：改数据 + 防抖保存 */
 export function patch(fn: (doc: DeskDoc) => void): void {
   fn(db.doc)
+  rev += 1
+  db.dirty = true
   scheduleSave()
 }
 
@@ -73,6 +80,7 @@ export async function flush(): Promise<void> {
     debounceTimer = null
   }
   if (!db.ready) return
+  const at = rev
   db.saving = true
   try {
     const res = await fetch('/api/data', {
@@ -84,6 +92,8 @@ export async function flush(): Promise<void> {
     if (!res.ok || !body?.ok) throw new Error(body?.message || '保存失败')
     db.savedAt = body.savedAt || new Date().toISOString()
     db.error = null
+    // 保存期间又有新的改动，就继续保持 dirty，等下一轮
+    if (rev === at) db.dirty = false
   } catch (err) {
     db.error = {
       code: 'SAVE',
@@ -95,12 +105,20 @@ export async function flush(): Promise<void> {
   }
 }
 
+/** 手动保存：取消等待中的防抖，立刻落盘，返回是否成功 */
+export async function saveNow(): Promise<boolean> {
+  await flush()
+  return !!db.ready && !db.error && !db.dirty
+}
+
 export function resetDbForTests(): void {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = null
+  rev = 0
   db.doc = createEmptyDoc()
   db.ready = false
   db.saving = false
   db.savedAt = null
+  db.dirty = false
   db.error = null
 }

@@ -138,7 +138,7 @@ function cancelImport() {
 }
 
 .block-title {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
 }
 
@@ -160,9 +160,9 @@ function cancelImport() {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   padding: 2px 0;
-  border-bottom: 0.5px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .count-label {
@@ -187,19 +187,19 @@ function cancelImport() {
   border-radius: var(--radius);
   background: var(--danger-soft);
   color: var(--danger);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .preview {
   margin-top: 10px;
   padding: 10px;
-  border: 0.5px solid var(--border-strong);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  background: var(--bg-secondary);
+  background: var(--surface-2);
 }
 
 .preview-head {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   margin-bottom: 6px;
 }
 

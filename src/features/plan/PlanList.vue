@@ -74,6 +74,9 @@ function dropOn(targetId: string | null, section: Section) {
       </div>
 
       <form class="add-row" @submit.prevent="submit(sec.key)">
+        <svg class="add-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M12 5.5v13M5.5 12h13" />
+        </svg>
         <input
           v-model="drafts[sec.key]"
           class="add-input"
@@ -90,44 +93,75 @@ function dropOn(targetId: string | null, section: Section) {
 .plan-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .plan-section {
-  border: 0.5px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 10px 12px 8px;
-  background: var(--bg);
+  padding: 12px 14px 10px;
+  background: var(--surface-2);
 }
 
 .section-head {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  font-size: 11px;
-  color: var(--text-3);
-  margin-bottom: 4px;
+  align-items: center;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+  margin-bottom: 6px;
 }
 
 .row-wrap {
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .add-row {
-  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 0 8px;
+  height: 32px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
+}
+
+.add-row:hover,
+.add-row:focus-within {
+  border-color: var(--accent);
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+
+.add-plus {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  opacity: 0.8;
 }
 
 .add-input {
   border: 0;
-  border-radius: 6px;
-  padding: 3px 0;
-  font-size: 12px;
+  border-radius: 0;
+  padding: 0;
+  height: 100%;
+  font-size: var(--fs-sm);
   background: transparent;
   color: var(--text);
+  box-shadow: none;
 }
 
-.add-input:focus {
+.add-input:focus,
+.add-input:hover,
+.add-input:focus-visible {
   border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .add-input::placeholder {
@@ -135,6 +169,6 @@ function dropOn(targetId: string | null, section: Section) {
 }
 
 .more {
-  padding: 2px 0 4px;
+  padding: 4px 2px 2px;
 }
 </style>

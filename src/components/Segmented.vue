@@ -28,25 +28,32 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 <style scoped>
 .segmented {
   display: inline-flex;
-  gap: 1px;
+  gap: 2px;
   background: var(--bg-secondary);
-  border-radius: var(--radius);
-  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
 }
 
 .seg {
   border: 0;
   background: transparent;
-  border-radius: 6px;
-  padding: 3px 10px;
-  font-size: 12px;
+  border-radius: 7px;
+  height: 26px;
+  padding: 0 12px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
   color: var(--text-2);
+  transition: background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.seg:hover {
+  color: var(--text);
 }
 
 .seg.active {
-  background: var(--bg);
+  background: var(--surface);
   color: var(--text);
-  font-weight: 500;
-  box-shadow: 0 0 0 0.5px var(--border);
+  box-shadow: var(--shadow-xs);
 }
 </style>

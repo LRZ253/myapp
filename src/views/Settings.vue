@@ -78,13 +78,14 @@ async function doReset() {
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
   gap: 12px;
   align-items: start;
   margin-top: 12px;
 }
 
 .block {
-  padding: 12px;
+  padding: 18px;
 }
 
 .block-head {
@@ -95,7 +96,7 @@ async function doReset() {
 }
 
 .block-title {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
 }
 

@@ -108,12 +108,12 @@ onMounted(refresh)
 }
 
 .block-title {
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 500;
 }
 
 .mini {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   padding: 1px 8px;
 }
 
@@ -128,7 +128,7 @@ onMounted(refresh)
   border-radius: var(--radius);
   background: var(--danger-soft);
   color: var(--danger);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .backup-list {
@@ -140,8 +140,8 @@ onMounted(refresh)
   align-items: center;
   gap: 10px;
   padding: 4px 0;
-  border-bottom: 0.5px solid var(--border);
-  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
 }
 
 .backup-day {
