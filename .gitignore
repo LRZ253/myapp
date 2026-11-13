@@ -1,0 +1,27 @@
+# 依赖
+node_modules/
+
+# 构建产物（npm run build 生成）
+dist/
+
+# 运行时数据：个人数据、备份与临时文件，不入库
+data/
+*.bak
+*.tmp
+
+# 日志
+*.log
+npm-debug.log*
+
+# 测试与工具缓存
+coverage/
+
+# WorkBuddy 本地工作区
+.workbuddy/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
